@@ -10,20 +10,50 @@ def create_thread_id():
 
 def add_thread_id(thread_id):
     if thread_id not in st.session_state['thread_history']:
-        st.session_state['thread_history'].append(thread_id)
+        st.session_state['thread_history'].append({'thread_id': thread_id, 'name': None})
 
 def get_chat_name(thread_id):
+
+    thread = next(
+        (
+            thread
+            for thread in st.session_state['thread_history']
+            if thread['thread_id'] == thread_id
+        ),
+        None
+    )
+
+    if thread is None:
+        return "New Chat"
+
+    if thread['name'] is not None:
+        return thread['name']
 
     state = chatbot.get_state(
         config= {'configurable': {'thread_id': thread_id}}
     )
-    messages = state.values.get('messages')
 
-    if messages:
-        response = summerize_agent.invoke({'content':messages[0].content})
-        return response['name']
-    else:
+    messages = state.values.get("messages")
+
+    if not messages:
         return "New Chat"
+
+    first_human_message = messages[0].content
+
+    if first_human_message is None:
+        return "New Chat"
+
+    response = summerize_agent.invoke({
+        'content': first_human_message
+    })
+
+    chat_name = response['name']
+
+    thread['name'] = chat_name
+    return chat_name
+
+
+    
 
 def add_message(role, content):
     message = {'role':role, 'content': content}
@@ -64,15 +94,16 @@ if st.sidebar.button("+ New Chat"):
     reset_chat()
     st.rerun()
 
-for thread_id in st.session_state['thread_history']:
+for thread in st.session_state['thread_history'][::-1]:
 
+    thread_id = thread['thread_id']
     if st.sidebar.button(
         get_chat_name(thread_id),
         key= thread_id
     ):
 
         st.session_state['thread_id'] = thread_id
-        messages = load_conversations()
+        messages = load_conversations(thread_id)
 
         temp_message_list = []
         for message in messages:
@@ -109,11 +140,11 @@ if user_input:
                 {
                     'messages':[HumanMessage(content= user_input)]
                 },
-                config= {'configurable': {'thread_id': thread_id}},
+                config= {'configurable': {'thread_id': st.session_state['thread_id']}},
                 stream_mode= 'messages'
             )
         )
 
-    add_message('assistent', ai_message)
+    add_message('assistant', ai_message)
 
     
