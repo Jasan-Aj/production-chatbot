@@ -14,7 +14,8 @@ class ChatState(TypedDict):
 
 llm_model = ChatGroq(
     api_key= os.environ.get("GROQ_API_KEY"),
-    model= os.environ.get("GROQ_MODEL")
+    model= os.environ.get("GROQ_MODEL"),
+    reasoning_format="hidden"
 )
 
 graph = StateGraph(ChatState)
