@@ -1,4 +1,4 @@
-from agent import chatbot
+from agent import chatbot, get_threads
 from langchain_core.messages import HumanMessage, AIMessage
 import uuid
 import streamlit as st
@@ -52,9 +52,6 @@ def get_chat_name(thread_id):
     thread['name'] = chat_name
     return chat_name
 
-
-    
-
 def add_message(role, content):
     message = {'role':role, 'content': content}
     st.session_state['message_history'].append(message)
@@ -81,12 +78,11 @@ if "message_history" not in st.session_state:
     st.session_state['message_history'] = []
 
 if 'thread_history' not in st.session_state:
-    st.session_state['thread_history'] = [] 
+    st.session_state['thread_history'] = get_threads()
 
 if 'thread_id' not in st.session_state:
     st.session_state['thread_id'] = create_thread_id()
     add_thread_id(st.session_state['thread_id'])
-
 
 st.sidebar.title("Recent Chats")
 
@@ -146,5 +142,3 @@ if user_input:
         )
 
     add_message('assistant', ai_message)
-
-    
