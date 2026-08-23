@@ -7,6 +7,8 @@ from typing import TypedDict, Annotated, Literal
 from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
+from langgraph.prebuilt import ToolNode, tools_condition
+from tools import search_tool, get_stock_price, get_weather, calculator
 
 load_dotenv()
 
@@ -22,18 +24,26 @@ llm_model = ChatGroq(
     reasoning_format="hidden"
 )
 
+tools = [search_tool, get_stock_price, get_weather, calculator]
+
+llm_with_tools = llm_model.bind_tools(tools)
+
 graph = StateGraph(ChatState)
 
-def invoke_chat(state: ChatState):
+def chat_node(state: ChatState):
     prompt = state['messages']
-    response = llm_model.invoke(prompt)
+    response = llm_with_tools.invoke(prompt)
 
     return {"messages":[response]}
 
-graph.add_node("invoke_chat",invoke_chat)
+tool_node = ToolNode(tools)
 
-graph.add_edge(START, "invoke_chat")
-graph.add_edge("invoke_chat", END)
+graph.add_node("chat_node",chat_node) 
+graph.add_node("tool_node", tool_node)
+
+graph.add_edge(START, "chat_node")
+graph.add_conditional_edges("chat_node", tools_condition)
+graph.add_edge("tool_node", "chat_node")
 
 chatbot = graph.compile(checkpointer=checkpointer)
 
