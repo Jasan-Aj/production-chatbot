@@ -4,6 +4,10 @@ import requests
 import math
 from dotenv import load_dotenv
 import os
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
 
 load_dotenv()
 
@@ -12,6 +16,43 @@ search_tool = TavilySearch(
     topic = "general",
     search_depth = "deep research"
 )
+
+loader = PyPDFLoader("Week.pdf")
+docs = loader.load()
+
+splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+chunks = splitter.split_documents(docs)
+
+embeddings = GoogleGenerativeAIEmbeddings(
+    model= os.environ.get("GEMINI_EMBEDDING_MODEL")
+)
+
+vector_store = FAISS.from_documents(chunks, embeddings)
+
+retriver = vector_store.as_retriever(search_type="similarity", search_kwargs = {'k':4})
+
+def rag_tool(query: str):
+    """
+    Retribe relevant information from the PDF document.
+    Use this tool when the user asks factual or conceptual questions
+    that may be answered using the stored PDF documents
+
+    args: 
+        query: The question or search query used to retrive PDF content.
+    """
+
+    documents = retriver.invoke(query)
+
+    if not documents:
+        return "No relevant information was found in the PDF."
+
+    formatted_documents = []
+
+    for index, document in documents:
+        source = document.metadata.get("source","Unknown Source")
+        page = document.metadata.get
+        
+
 
 @tool
 def calculator(expression: str):

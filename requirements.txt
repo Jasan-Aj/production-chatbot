@@ -8,3 +8,7 @@ streamlit
 langgraph-checkpoint-sqlite
 langchain-tavily
 tavily-python
+langchain-google-genai
+pypdf
+langchain-text-splitter
+faiss-cpu
