@@ -15,6 +15,7 @@ load_dotenv()
 connection = sqlite3.connect(database="chatbot.db", check_same_thread=False)
 checkpointer = SqliteSaver(connection)
 
+
 class ChatState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
 

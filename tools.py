@@ -33,7 +33,7 @@ retriver = vector_store.as_retriever(search_type="similarity", search_kwargs = {
 
 def rag_tool(query: str):
     """
-    Retribe relevant information from the PDF document.
+    Retrive relevant information from the PDF document.
     Use this tool when the user asks factual or conceptual questions
     that may be answered using the stored PDF documents
 
@@ -50,9 +50,16 @@ def rag_tool(query: str):
 
     for index, document in documents:
         source = document.metadata.get("source","Unknown Source")
-        page = document.metadata.get
+        page = document.metadata.get("page", "Unknown Page")
         
+        formatted_documents.append(
+            f"Document {index}\n"
+            f"Source: {source}\n"
+            f"Page: {page}\n"
+            f"Content: {document.page_content}"
+        )
 
+    return "\n\n".join(formatted_documents)
 
 @tool
 def calculator(expression: str):
